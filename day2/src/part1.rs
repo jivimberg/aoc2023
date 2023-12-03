@@ -59,12 +59,13 @@ fn main() {
     }
 
     let result = games.iter()
-        .map(|game| {
+        .filter(|game| {
             let max_r = game.sets.iter().map(|set| set.rgb[0]).max().unwrap();
             let max_g = game.sets.iter().map(|set| set.rgb[1]).max().unwrap();
             let max_b = game.sets.iter().map(|set| set.rgb[2]).max().unwrap();
-            max_r * max_g * max_b
+            max_r <= 12 && max_g <= 13 && max_b <= 14
         })
+        .map(|game| game.id)
         .sum::<u32>();
 
     dbg!(result);
