@@ -1,3 +1,7 @@
+use std::fs::File;
+use std::io;
+use std::thread::current;
+use nom_locate::position;
 
 #[derive(Debug)]
 struct Position {
@@ -48,23 +52,14 @@ fn main() {
         }
     }
 
-    let result: u32 = symbols.iter()
-        .filter(|(symbol, _)| symbol == &'*')
-        .filter_map(|(symbol, s_pos)| {
-            let adjacent_numbers: Vec<&u32> = numbers.iter()
-                .filter(|(number, n_pos)| {
-                    (s_pos.line_number - 1 <= n_pos.line_number && n_pos.line_number <= s_pos.line_number + 1)
-                        && (s_pos.col_number - 1 <= n_pos.col_number + number.to_string().len() - 1 && n_pos.col_number <= s_pos.col_number + 1)
-                })
-                .map(|(number, _)| number)
-                .collect();
-
-            if(adjacent_numbers.len() == 2) {
-                Some(adjacent_numbers[0] * adjacent_numbers[1])
-            } else {
-                None
-            }
+    let result: u32 = numbers.iter()
+        .filter(|(number, n_pos)| {
+            symbols.iter().any(|(symbol, s_pos)| {
+                (s_pos.line_number - 1 <= n_pos.line_number && n_pos.line_number <= s_pos.line_number + 1)
+                    && (s_pos.col_number - 1 <= n_pos.col_number + number.to_string().len() - 1 && n_pos.col_number <= s_pos.col_number + 1)
+            })
         })
+        .map(|(number, _)| number)
         .sum();
 
     dbg!(result);
