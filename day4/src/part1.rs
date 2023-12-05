@@ -28,23 +28,20 @@ fn parse_card(s: &str) -> IResult<&str, Card> {
 }
 
 fn main() {
-    let cards: Vec<Card> = include_str!("my_input.txt").lines()
+    let result: u32 = include_str!("my_input.txt").lines()
         .map(|line| parse_card(line).unwrap().1)
-        .collect();
+        .map(|card| {
+            let hits = card.card_numbers.iter()
+                .filter(|card_number| card.winning_numbers.contains(card_number))
+                .count();
 
-    let mut card_copies = vec![1;cards.len()];
-
-    for (i, card) in cards.iter().enumerate() {
-        let hits = card.card_numbers.iter()
-            .filter(|card_number| card.winning_numbers.contains(card_number))
-            .count();
-
-        for j in (i + 1)..=(i + hits) {
-            card_copies[j] += card_copies[i];
-        }
-    }
-
-    let result: u32 = card_copies.iter().sum();
+            if hits == 0 {
+                0
+            } else {
+                u32::pow(2, (hits - 1) as u32)
+            }
+        })
+        .sum();
 
     dbg!(result);
 }
