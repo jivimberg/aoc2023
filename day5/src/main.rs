@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::ops::Range;
 
 use nom::bytes::complete::{tag, take_till};
@@ -6,10 +7,11 @@ use nom::combinator::{map, map_res, opt};
 use nom::IResult;
 use nom::multi::separated_list1;
 use nom::sequence::{pair, tuple};
+use itertools::Itertools;
 
 #[derive(Debug)]
 struct Almanac {
-    seeds: Vec<u64>,
+    seeds: Vec<Range<u64>>,
     seed_to_soil: Vec<Mapping>,
     soil_to_fertilizer: Vec<Mapping>,
     fertilizer_to_water: Vec<Mapping>,
@@ -42,13 +44,18 @@ fn parse_almanac(s: &str) -> IResult<&str, Almanac> {
         })(s)
 }
 
-fn parse_seeds(s: &str) -> IResult<&str, Vec<u64>> {
+fn parse_seeds(s: &str) -> IResult<&str, Vec<Range<u64>>> {
     let f = tuple((
         tag("seeds: "),
         separated_list1(space1, map_res(digit1, str::parse)),
         newline
     ));
-    map(f, |(_, seeds, _)| seeds)(s)
+    map(f, |(_, numbers, _)| {
+        numbers.into_iter()
+            .tuples()
+            .map(|(start, end)| start..start + end)
+            .collect()
+    })(s)
 }
 
 fn parse_map(s: &str) -> IResult<&str, Vec<Mapping>> {
@@ -76,9 +83,15 @@ fn convert(number: u64, mappings: &Vec<Mapping>) -> u64 {
 }
 
 fn main() {
-    let input: &str = include_str!("my_input.txt");
+    let input: &str = include_str!("sample_input.txt");
     let almanac = parse_almanac(input).unwrap().1;
-    let result: u64 = almanac.seeds.iter()
+    let mut seeds: HashSet<u64> = HashSet::new();
+    dbg!("finished parsing");
+    for seed_range in almanac.seeds.iter() {
+        seeds.extend(seed_range.clone().into_iter());
+    }
+    dbg!(&seeds.len());
+    let result: u64 = seeds.iter()
         .map(|seed| {
             let soil = convert(*seed, &almanac.seed_to_soil);
             let fertilizer = convert(soil, &almanac.soil_to_fertilizer);
