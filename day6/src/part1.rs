@@ -1,5 +1,4 @@
 use std::iter::zip;
-use std::ops::Range;
 use nom::bytes::complete::tag;
 use nom::character::complete::{digit1, newline, space1};
 use nom::combinator::{map, map_res, opt};
@@ -9,18 +8,18 @@ use nom::sequence::{pair, tuple};
 
 #[derive(Debug)]
 struct Race {
-    time: u64,
-    distance: u64
+    time: u32,
+    distance: u32
 }
 
 fn main() {
     let input: &str = include_str!("my_input.txt");
-    let races = vec![parse_input(input).unwrap().1];
+    let races = parse_input(input).unwrap().1;
     dbg!(&races);
 
     let mut result = 1;
     for Race { time, distance } in races {
-        let mut min_hold: Option<u64> = None;
+        let mut min_hold: Option<u32> = None;
         for start_time in 1..time {
             if start_time * (time - start_time) > distance {
                 min_hold = Some(start_time);
@@ -28,7 +27,7 @@ fn main() {
             }
         }
 
-        let mut max_hold: Option<u64> = None;
+        let mut max_hold: Option<u32> = None;
         for start_time in (1..time).rev() {
             if start_time * (time - start_time) > distance {
                 max_hold = Some(start_time);
@@ -47,32 +46,34 @@ fn main() {
     dbg!(result);
 }
 
-fn parse_input(input: &str) -> IResult<&str, Race> {
+fn parse_input(input: &str) -> IResult<&str, Vec<Race>> {
     let f = pair(
         parse_time,
         parse_distance,
     );
-    map(f, |(time, distance)| {
-        Race { time, distance }
+    map(f, |(times, distances)| {
+        zip(times, distances)
+            .map(|(time, distance)| Race { time, distance })
+            .collect()
     })(input)
 }
 
-fn parse_time(s: &str) -> IResult<&str, u64> {
+fn parse_time(s: &str) -> IResult<&str, Vec<u32>> {
     let f = tuple((
         tag("Time:"),
         space1,
-        separated_list1(space1, digit1),
+        separated_list1(space1, map_res(digit1, str::parse)),
         newline
     ));
-    map(f, |(_, _, digits, _)| digits.join("").parse::<u64>().unwrap())(s)
+    map(f, |(_, _, times, _)| times)(s)
 }
 
-fn parse_distance(s: &str) -> IResult<&str, u64> {
+fn parse_distance(s: &str) -> IResult<&str, Vec<u32>> {
     let f = tuple((
         tag("Distance:"),
         space1,
-        separated_list1(space1, digit1),
+        separated_list1(space1, map_res(digit1, str::parse)),
         opt(newline)
     ));
-    map(f, |(_, _, digits, _)| digits.join("").parse::<u64>().unwrap())(s)
+    map(f, |(_, _, times, _)| times)(s)
 }
