@@ -39,7 +39,7 @@ fn card_value(c: char) -> u64 {
         'A' => 14,
         'K' => 13,
         'Q' => 12,
-        'J' => 1,
+        'J' => 11,
         'T' => 10,
         _ => c.to_digit(10).unwrap() as u64,
     }
@@ -62,14 +62,9 @@ fn parse_hand(input: &str) -> Hand {
     let char_count  = cards.chars()
         .into_grouping_map_by(|&x| x)
         .fold(0, |acc, _key, _value| acc + 1);
-    let number_of_jokers = char_count.get(&'J').unwrap_or(&0);
-    let mut char_counts_desc = char_count.iter()
-        .filter(|(key, _value)| **key != 'J')
-        .map(|(_key, value)| *value)
-        .sorted()
-        .rev();
-    let max1 = char_counts_desc.next().unwrap_or(0) + number_of_jokers;
-    let max2 = char_counts_desc.next().unwrap_or(0);
+    let mut char_counts_desc = char_count.values().sorted().rev();
+    let max1 = char_counts_desc.next().unwrap();
+    let max2 = char_counts_desc.next().unwrap_or(&0);
     let kind = match (max1, max2) {
         (5, _) => Kind::FIVE_OF_A_KIND,
         (4, _) => Kind::FOUR_OF_A_KIND,
@@ -79,10 +74,6 @@ fn parse_hand(input: &str) -> Hand {
         (2, _) => Kind::ONE_PAIR,
         _ => Kind::HIGH_CARD,
     };
-
-    if(cards.contains('J')) {
-        dbg!(cards, kind, max1, max2);
-    }
 
     Hand {
         cards: cards.to_string(),
